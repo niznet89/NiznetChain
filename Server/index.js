@@ -4,6 +4,7 @@ const TARGET_DIFFICULTY = BigInt("0x00000" + "F".repeat(59));
 const fs = require('fs');
 const miner1 = require("./miner1.js");
 const miner2 = require("./miner2.js");
+const { mempool } = require("./transactions.js")
 
 let blockchain = new Blockchain();
 
@@ -43,10 +44,11 @@ function mine() {
   });
 
 function addToAccount(address, amount) {
+
   if (blockchain[address]) {
-    blockchain[address] += amount,
+    return blockchain[address] += amount
   } else {
-    blockchain[address] = amount;
+    return blockchain[address] = amount;
   }
 }
 
