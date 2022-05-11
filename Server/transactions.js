@@ -29,6 +29,10 @@ privateArray.forEach(pk => {
 
 let mempool = [];
 
+function clearMempool() {
+  return mempool = [];
+}
+
 const balances = {
   [publicArray[0]]: 100,
   [publicArray[1]]: 50,
@@ -66,12 +70,9 @@ app.post('/send', (req, res) => {
     let signature = await secp.sign(messageHash, sender);
     const isValid = secp.verify(signature, messageHash, sendingPrivateKey);
     console.log(isValid);
-
-    const indexOfSender = privateArray.indexOf(sender);
-    console.log(indexOfSender);
-    balances[publicArray[indexOfSender]] -= amount;
-    balances[recipient] = (balances[recipient] || 0) + +amount;
-    res.send({ balance: balances[publicArray[indexOfSender]] });
+    if (isValid) {
+      mempool.push({sender: sender, recipient: recipient, amount: amount});
+    };
   })();
 });
 
@@ -79,4 +80,4 @@ app.listen(port, () => {
   console.log(`Listening on port ${port}!`);
 });
 
-module.exports = { mempool };
+module.exports = { mempool, clearMempool };
