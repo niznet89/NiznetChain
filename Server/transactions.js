@@ -3,21 +3,17 @@ const app = express();
 const cors = require('cors');
 const port = 3042;
 const secp = require('@noble/secp256k1');
+const { blockchain } = require("./index.js");
 
 // localhost can have cross origin errors
 // depending on the browser you use!
 app.use(cors());
 app.use(express.json());
 
-// Defining all the private keys for the project
-let privateKey1 = secp.utils.randomPrivateKey();
-let privateKey2 = secp.utils.randomPrivateKey();
-let privateKey3 = secp.utils.randomPrivateKey();
-privateKey1 = Buffer.from(privateKey1).toString('hex');
-privateKey2 = Buffer.from(privateKey2).toString('hex');
-privateKey3 = Buffer.from(privateKey3).toString('hex');
+console.log(blockchain);
 
-let privateArray = [privateKey1, privateKey2, privateKey3];
+
+let privateArray = ["4653ae01c9276f3706d9bdb2958c3a6c0c10b324324ca4c6ed547b10c0fefbfa", "551b867617990d1a9915086a399da89eb60c32d1fc72b3e1f4665e4efdedb7a7", "c5422ed605cca3267063e56e93ac073397568c9aa27e2fb5fd64a838d0ec70ea"];
 let publicArray = [];
 
 privateArray.forEach(pk => {
@@ -64,7 +60,7 @@ app.post('/send', (req, res) => {
   const {sender, recipient, amount} = req.body;
   (async () => {
     let sendingPrivateKey = secp.getPublicKey(sender);
-    console.log(Buffer.from(sendingPrivateKey).toString('hex'));
+
     let messageHash = await secp.utils.sha256(amount);
     console.log(messageHash);
     let signature = await secp.sign(messageHash, sender);
@@ -80,4 +76,4 @@ app.listen(port, () => {
   console.log(`Listening on port ${port}!`);
 });
 
-module.exports = { mempool, clearMempool };
+module.exports = { mempool, clearMempool, publicArray };

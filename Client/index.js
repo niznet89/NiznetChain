@@ -1,6 +1,6 @@
 import "./index.scss";
 
-const server = "http://localhost:3042";
+const server = "http://localhost:3000";
 
 document.getElementById("get-accounts").addEventListener('click', () => {
 
