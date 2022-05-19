@@ -21,7 +21,32 @@ console.log(blockchain.accounts);
 // Kick start mining process once index.js is started
 mine();
 
+
 function mine() {
+
+  ////////////
+
+app.get('/balance', (req, res) => {
+  const {address} = req.params;
+  const accounts = blockchain.accounts || 0;
+  res.send({ accounts });
+});
+
+app.post('/send', (req, res) => {
+  const {sender, recipient, amount} = req.body;
+  (async () => {
+    let sendingPrivateKey = secp.getPublicKey(sender);
+
+    let messageHash = await secp.utils.sha256(amount);
+    console.log(messageHash);
+    let signature = await secp.sign(messageHash, sender);
+    const isValid = secp.verify(signature, messageHash, sendingPrivateKey);
+    console.log(isValid);
+    if (isValid) {
+      mempool.push({sender: sender, recipient: recipient, amount: amount});
+    };
+  })();
+});
 
   let mempool = [];
   let minedMempool = mineMempool(mempool);
@@ -36,10 +61,10 @@ function mine() {
   const minerTwo = new Promise((resolve, reject) => {
     resolve(mineTwo(minedMempool));
   });
-  console.log("one", minerOne, "two", minerTwo);
+  //console.log("one", minerOne, "two", minerTwo);
 
-  Promise.race([minerOne, minerTwo]).then((value) => {
-    console.log(value);
+  Promise.race([minerTwo, minerOne]).then((value) => {
+    console.log("THIS BLOCK ", value);
     blockchain.addBlocks(value);
     console.log(`Mined block #${blockchain.blockHeight()} with a hash of ${value.hash()} at nonce ${value.nonce}`);
 
@@ -54,33 +79,7 @@ function mine() {
 
   });
 
-  ////////////
 
-  app.get('/balance', (req, res) => {
-    const {address} = req.params;
-    const accounts = blockchain.accounts || 0;
-    res.send({ accounts });
-  });
-
-  app.post('/send', (req, res) => {
-    const {sender, recipient, amount} = req.body;
-    (async () => {
-      let sendingPrivateKey = secp.getPublicKey(sender);
-
-      let messageHash = await secp.utils.sha256(amount);
-      console.log(messageHash);
-      let signature = await secp.sign(messageHash, sender);
-      const isValid = secp.verify(signature, messageHash, sendingPrivateKey);
-      console.log(isValid);
-      if (isValid) {
-        mempool.push({sender: sender, recipient: recipient, amount: amount});
-      };
-    })();
-  });
-
-  app.listen(port, () => {
-    console.log(`Listening on port ${port}!`);
-  });
 
 
 function addToAccount(address, amount) {
@@ -100,6 +99,34 @@ function mineMempool(mempoolArray) {
 }
 
 
-
   setTimeout(mine, 1000);
 }
+
+
+////////////
+
+app.get('/balance', (req, res) => {
+  const {address} = req.params;
+  const accounts = blockchain.accounts || 0;
+  res.send({ accounts });
+});
+
+app.post('/send', (req, res) => {
+  const {sender, recipient, amount} = req.body;
+  (async () => {
+    let sendingPrivateKey = secp.getPublicKey(sender);
+
+    let messageHash = await secp.utils.sha256(amount);
+    console.log(messageHash);
+    let signature = await secp.sign(messageHash, sender);
+    const isValid = secp.verify(signature, messageHash, sendingPrivateKey);
+    console.log(isValid);
+    if (isValid) {
+      mempool.push({sender: sender, recipient: recipient, amount: amount});
+    };
+  })();
+});
+
+app.listen(port, () => {
+  console.log(`Listening on port ${port}!`);
+});
