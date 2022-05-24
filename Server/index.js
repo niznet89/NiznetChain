@@ -8,7 +8,12 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const port = 3000;
+const secp = require('@noble/secp256k1');
 
+// localhost can have cross origin errors
+// depending on the browser you use!
+app.use(cors());
+app.use(express.json());
 
 let blockchain = new Blockchain();
 
@@ -18,43 +23,46 @@ const privateKeys = ["4653ae01c9276f3706d9bdb2958c3a6c0c10b324324ca4c6ed547b10c0
 
 console.log(blockchain.accounts);
 
+let mempool = []
+
 // Kick start mining process once index.js is started
 mine();
 
 
 function mine() {
 
-  ////////////
 
-app.get('/balance', (req, res) => {
-  const {address} = req.params;
-  const accounts = blockchain.accounts || 0;
-  res.send({ accounts });
-});
+// Listen to front-end for requests for balance & changes to state (account balance)
 
-app.post('/send', (req, res) => {
-  const {sender, recipient, amount} = req.body;
-  (async () => {
-    let sendingPrivateKey = secp.getPublicKey(sender);
+  app.get('/balance', (req, res) => {
+    const {address} = req.params;
+    const accounts = blockchain.accounts || 0;
+    res.send({ accounts });
+  });
 
-    let messageHash = await secp.utils.sha256(amount);
-    console.log(messageHash);
-    let signature = await secp.sign(messageHash, sender);
-    const isValid = secp.verify(signature, messageHash, sendingPrivateKey);
-    console.log(isValid);
-    if (isValid) {
-      mempool.push({sender: sender, recipient: recipient, amount: amount});
-    };
-  })();
-});
+  app.post('/send', (req, res) => {
+    const {sender, recipient, amount} = req.body;
+    (async () => {
+      let sendingPrivateKey = secp.getPublicKey(sender);
+      let messageHash = await secp.utils.sha256(amount);
+      let signature = await secp.sign(messageHash, sender);
+      const isValid = secp.verify(signature, messageHash, sendingPrivateKey);
+      // Convert Uint8 array to Public Address
+      publicKey = Buffer.from(sendingPrivateKey).toString('hex');
+      publicKey = '0x' + publicKey.slice(publicKey.length - 40);
+      console.log(isValid);
+      if (isValid) {
+        mempool.push({sender: publicKey, recipient: recipient, amount: amount});
+      };
+    })();
+  });
 
-  let mempool = [];
   let minedMempool = mineMempool(mempool);
-  let mining = true;
+
   console.log(minedMempool);
 
-  const minerOne = new Promise((resolve, reject) => {
 
+  const minerOne = new Promise((resolve, reject) => {
     resolve(mineOne(minedMempool));
   });
 
@@ -82,50 +90,29 @@ app.post('/send', (req, res) => {
 
 
 
-function addToAccount(address, amount) {
+  function addToAccount(address, amount) {
 
-  if (blockchain[address]) {
-    return blockchain[address] += amount
-  } else {
-    return blockchain[address] = amount;
+    if (blockchain[address]) {
+      return blockchain[address] += amount
+    } else {
+      return blockchain[address] = amount;
+    }
   }
-}
 
-function mineMempool(mempoolArray) {
-  const validatedMempool = mempoolArray.filter(x => x.amount <= blockchain.accounts[x.sender]);
+  function mineMempool(mempoolArray) {
+    console.log(mempoolArray[0]);
+    const validatedMempool = mempoolArray.filter(x => parseInt(x.amount) <= blockchain.accounts[x.sender]);
+    return validatedMempool;
+
+  }
+  // Clear the mempool
   mempool = [];
-  return validatedMempool;
-
-}
-
 
   setTimeout(mine, 1000);
 }
 
 
 ////////////
-
-app.get('/balance', (req, res) => {
-  const {address} = req.params;
-  const accounts = blockchain.accounts || 0;
-  res.send({ accounts });
-});
-
-app.post('/send', (req, res) => {
-  const {sender, recipient, amount} = req.body;
-  (async () => {
-    let sendingPrivateKey = secp.getPublicKey(sender);
-
-    let messageHash = await secp.utils.sha256(amount);
-    console.log(messageHash);
-    let signature = await secp.sign(messageHash, sender);
-    const isValid = secp.verify(signature, messageHash, sendingPrivateKey);
-    console.log(isValid);
-    if (isValid) {
-      mempool.push({sender: sender, recipient: recipient, amount: amount});
-    };
-  })();
-});
 
 app.listen(port, () => {
   console.log(`Listening on port ${port}!`);

@@ -527,17 +527,17 @@ function hmrAcceptRun(bundle, id) {
 
 },{}],"frMjV":[function(require,module,exports) {
 var _indexScss = require("./index.scss");
-const server = "http://localhost:3042";
+const server = "http://localhost:3000";
 document.getElementById("get-accounts").addEventListener('click', ()=>{
     fetch(`${server}/balance`).then((response)=>{
         return response.json();
     }).then((data)=>{
-        console.log(data);
-        for(const key in data.balance){
-            console.log(`${key}: ${data.balance[key]}`);
+        console.log(data.accounts);
+        for(const key in data.accounts){
+            console.log(`${key}: ${data.accounts[key]}`);
             document.getElementById("account-table").insertAdjacentHTML('beforeend', `<tr>
       <th>${key}</th>
-      <th>${data.balance[key]}</th>
+      <th>${data.accounts[key]}</th>
     </tr>`);
         }
     //document.getElementById("balance").innerHTML = balance;
