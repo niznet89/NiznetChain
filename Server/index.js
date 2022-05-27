@@ -21,8 +21,6 @@ const accounts = blockchain.accounts;
 
 const privateKeys = ["4653ae01c9276f3706d9bdb2958c3a6c0c10b324324ca4c6ed547b10c0fefbfa", "551b867617990d1a9915086a399da89eb60c32d1fc72b3e1f4665e4efdedb7a7", "c5422ed605cca3267063e56e93ac073397568c9aa27e2fb5fd64a838d0ec70ea"]
 
-console.log(blockchain.accounts);
-
 let mempool = []
 
 // Kick start mining process once index.js is started
@@ -52,28 +50,32 @@ function mine() {
       publicKey = '0x' + publicKey.slice(publicKey.length - 40);
       console.log(isValid);
       if (isValid) {
-        mempool.push({sender: publicKey, recipient: recipient, amount: amount});
+        mempool.push({sender: publicKey, recipient: recipient, amount: parseInt(amount)});
       };
     })();
   });
 
   let minedMempool = mineMempool(mempool);
 
-  console.log(minedMempool);
+  //console.log(minedMempool);
 
 
   const minerOne = new Promise((resolve, reject) => {
-    resolve(mineOne(minedMempool));
+    let result = mineOne(minedMempool);
+    resolve(result);
   });
 
   const minerTwo = new Promise((resolve, reject) => {
-    resolve(mineTwo(minedMempool));
+    let result = mineTwo(minedMempool);
+    resolve(result);
   });
   //console.log("one", minerOne, "two", minerTwo);
 
-  Promise.race([minerTwo, minerOne]).then((value) => {
+  Promise.race([minerOne, minerTwo]).then((value) => {
     console.log("THIS BLOCK ", value);
     blockchain.addBlocks(value);
+    addToAccount(value.transactions);
+    console.log(value.transactions);
     console.log(`Mined block #${blockchain.blockHeight()} with a hash of ${value.hash()} at nonce ${value.nonce}`);
 
     const content = JSON.stringify(blockchain);
@@ -88,14 +90,10 @@ function mine() {
   });
 
 
-
-
-  function addToAccount(address, amount) {
-
-    if (blockchain[address]) {
-      return blockchain[address] += amount
-    } else {
-      return blockchain[address] = amount;
+  function addToAccount(blockTransactions) {
+    for (let i = 0; i < blockTransactions.length; i++) {
+      blockchain.accounts[blockTransactions[i].sender] -= blockTransactions[i].amount;
+      blockchain.accounts[blockTransactions[i].recipient] += blockTransactions[i].amount;
     }
   }
 
