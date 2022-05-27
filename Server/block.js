@@ -14,7 +14,6 @@ class Block {
   }
 
   addTransactions(transactions) {
-    console.log(transactions);
     transactions.forEach(element => {
       this.transactions.push(element);
     });

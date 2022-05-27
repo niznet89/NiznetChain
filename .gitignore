@@ -1,2 +1,6 @@
-/node_modules
-db.json
+dist
+.cache
+!.gitignore
+.parcel-cache
+*.lock
+node_modules
